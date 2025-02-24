@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Math Tutor - Jamba 1.5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
+
+    <!-- MathJax for rendering AI math responses properly -->
+    <script>
+      window.MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+        svg: { fontCache: 'global' }
+      };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 12px 0;
+            background: rgba(0, 0, 0, 0.8);
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s ease-in-out;
+        }
+
+        .nav a:hover {
+            color: #ff6600;
+        }
+
+        /* 🔥 Smaller Chat UI */
+        .chat-container {
+            width: 100%;
+            max-width: 450px;
+            margin-top: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            box-shadow: 0px 4px 10px rgba(255, 204, 0, 0.3);
+        }
+
+        .chat-box {
+            height: 250px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            font-size: 13px;
+            line-height: 1.4;
+            max-height: 300px;
+            white-space: pre-line;
+        }
+
+        /* 🔥 Make AI's responses smaller */
+        .chat-box p {
+            font-size: 8px;
+            line-height: 1.0;
+        }
+
+        /* 🔥 Updated input box with white text */
+        .chat-input {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 8px;
+            background: #222;
+            color: #ffffff; /* Ensures white input text */
+            outline: none;
+        }
+
+        .send-btn, .clear-btn {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .send-btn {
+            background: #ffcc00;
+            color: #121212;
+        }
+
+        .send-btn:hover {
+            background: #ff6600;
+        }
+
+        .clear-btn {
+            background: #ff3333;
+            color: #fff;
+        }
+
+        .clear-btn:hover {
+            background: #cc0000;
+        }
+
+        .back-home {
+            margin-top: 20px;
+        }
+
+        .back-home a {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #ffcc00;
+            color: #121212;
+            text-decoration: none;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .back-home a:hover {
+            background: #ff6600;
+            transform: translateY(-2px);
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="projects.html">Projects</a>
+        <a href="games.html">Games</a>
+        <a href="#contact">Contact</a>
+    </nav>
+
+    <div class="chat-container">
+        <h2>Math Tutor - Jamba 1.5</h2>
+        <div class="chat-box" id="chat-box">
+            <p><strong>AI:</strong> Hi! Ask me any math question.</p>
+        </div>
+        <input type="text" id="chat-input" class="chat-input" placeholder="Enter a math problem...">
+        <button onclick="sendMessage()" class="send-btn">Ask AI</button>
+        <button onclick="clearChat()" class="clear-btn">Clear Chat</button>
+    </div>
+
+    <div class="back-home">
+        <a href="index.html">Back to Home</a>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const inputBox = document.getElementById("chat-input");
+            const chatBox = document.getElementById("chat-box");
+            const userMessage = inputBox.value.trim();
+
+            if (userMessage === "") return;
+
+            // ✅ Display user message with styling
+            chatBox.innerHTML += `<p class="user-message"><strong>You:</strong> ${userMessage}</p>`;
+            inputBox.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch("https://api.ai21.com/studio/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer c2V8I3JXwaf4mDLt4DWbUR1QSjnxn9vo",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "model": "jamba-1.5-large",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are a helpful AI tutor with expertise in both math and general knowledge. Always follow these rules:\n\n\
+                                - For **math expressions**, use proper LaTeX:\n\
+                                    - Inline math: \\( ... \\)\n\
+                                    - Block math: \\[ ... \\]\n\
+                                    - Do NOT use \[ or \] brackets.\n\
+                                    - Ensure all math expressions are properly closed.\n\
+                                    - Example: Instead of \[f(x) = 7x\], write \\( f(x) = 7x \\).\n\
+                                - **For general knowledge questions**, provide clear, concise, and accurate answers.\n\
+                                - **Remember past responses** and use them when appropriate.\n\
+                                - **If a user asks to ‘resend’ or ‘repeat’, recall and return your last response verbatim.**\n\
+                                - **Respond in a structured way to ensure clarity.**"
+                            },
+                            { "role": "user", "content": userMessage }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                console.log("AI Response:", data);
+
+                let aiResponse = data?.choices?.[0]?.message?.content || "Error: No response from AI.";
+
+                // 🔥 Fix AI formatting issues before displaying
+                aiResponse = aiResponse
+                    .replace(/\$\$/g, "\\[") // Convert block math
+                    .replace(/\\\(/g, "\\(") // Fix inline math
+                    .replace(/\\\)/g, "\\)"); // Ensure proper closing
+
+                // ✅ Display AI response with styling
+                chatBox.innerHTML += `<p class="ai-message"><strong>AI:</strong> ${aiResponse}</p>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // Ensure MathJax re-renders
+                if (window.MathJax) {
+                    window.MathJax.typeset();
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                chatBox.innerHTML += `<p class="ai-message"><strong>AI:</strong> Sorry, something went wrong.</p>`;
+            }
+        }
+    </script>
+
+</body>
+</html>
